@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>App Store header</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { background: #2a2a2a; padding: 32px; font-family: -apple-system, system-ui, sans-serif; color: #eee; }
+  h1 { font-size: 22px; margin-bottom: 16px; }
+  nav { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  nav a { color: #FFCD5C; font-size: 15px; }
+
+  /* Header: 1920×823 CSS px, i.e. 3840×1646 at 2x (21:9). Search results: 1920×1280, i.e. 3840×2560 (3:2).
+     Shown at half size; export renders them at full size. */
+  .canvas { position: relative; width: 1920px; overflow: hidden; zoom: 0.5; }
+  /* The scene is drawn 823 px tall, then scaled to the canvas height: both layouts share its coordinates. */
+  .scene { position: absolute; left: 0; top: 0; height: 823px; transform-origin: 0 0; }
+  /* The artwork is only 1.6:1: its left edge, stretched, extends the sky and the ground. A column of the same
+     image rather than CSS colours, which WebKit would not match to the image's colour profile. */
+  .edge { position: absolute; left: 0; top: 0; height: 823px; }
+  .art { position: absolute; right: 0; top: 0; height: 823px; }
+  #sky, #weed { position: absolute; inset: 0; }
+  /* Low enough to clear the iPhone's Dynamic Island and the iPad's top crop, so they would cross the mesa:
+     they fade out before it, its left face being 470 px from the right edge. */
+  #sky { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 680px), transparent calc(100% - 480px)); }
+
+  /* Search results only: one asset per language anyway, so it says what the app is for. */
+  .tagline {
+    position: absolute; left: 90px; top: 320px; max-width: 1220px;
+    font: 600 124px/1.08 Fredoka, sans-serif; color: #601411;
+  }
+
+  .phone {
+    position: absolute; left: 1365px; top: 80px; height: 1120px; aspect-ratio: 1320 / 2868;
+    border: 18px solid #1d1d1f; border-radius: 104px; background: #1d1d1f;
+    box-shadow: 0 50px 100px rgba(60, 20, 10, .35);
+  }
+  .phone img { width: 100%; height: 100%; border-radius: 86px; display: block; }
+
+  body.export { padding: 0; background: none; overflow: hidden; }
+  body.export ::-webkit-scrollbar { display: none; }
+  body.export h1, body.export nav { display: none; }
+  body.export .canvas { zoom: 1; }
+</style>
+</head>
+<body>
+<h1>App Store header and search results (20 s loop)</h1>
+<nav>
+  <a href="#header">Header</a>
+  <a href="#search-en">Search en</a>
+  <a href="#search-fr">fr</a>
+</nav>
+<div class="canvas" id="canvas"></div>
+
+<script>
+  // CONFIG, from the scene artwork: its width at a height of SCENE_HEIGHT, its ground line (groundY in setup),
+  // its files in assets/ (a PDF rendered with sips, and a 2-px column of its left edge), the clouds and the
+  // tumbleweed's colours. The scene, the motions and the loop are generic.
+
+  /// Seconds. Every motion below completes a whole number of cycles in it, so the video loops seamlessly.
+  const LOOP = 20;
+  const SCENE_HEIGHT = 823;
+  const ART_WIDTH = 1320;
+  const LAYOUTS = { header: { height: 823 }, search: { height: 1280, phone: "10-list" } };
+  /// Languages without their own captures borrow another's, as in slides.html.
+  // CONFIG: languages; one without its own captures borrows another's.
+  const SCREENS = { en: "en", fr: "fr" };
+  /// The first slide's title, from slides.html. "\n" forces a line break.
+  const TAGLINES = {
+    en: "Problem
+in one line",
+    fr: "Le problème
+en une ligne",
+  };
+
+  const SVG = "http://www.w3.org/2000/svg";
+  const make = (name, attributes, parent) => {
+    const node = document.createElementNS(SVG, name);
+    for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, value);
+    parent?.append(node);
+    return node;
+  };
+
+  // Flat clouds in the artwork's style. Each layer repeats every `period` px and slides by one period per
+  // loop: the far layer moves slower, for depth.
+  const layers = [
+    { period: 640, opacity: 0.55, clouds: [{ x: 430, y: 300, scale: 0.45 }] },
+    { period: 960, opacity: 0.9, clouds: [{ x: 180, y: 345, scale: 1 }] },
+  ];
+  const R = 52;
+  let scene;
+
+  function cloud(parent, scale) {
+    const group = make("g", { transform: `scale(${scale})`, fill: "#FFF6E3" }, parent);
+    make("rect", { x: -110, y: -18, width: 220, height: 40, rx: 20 }, group);
+    make("circle", { cx: -45, cy: -22, r: 40 }, group);
+    make("circle", { cx: 20, cy: -40, r: 52 }, group);
+    make("circle", { cx: 75, cy: -12, r: 32 }, group);
+  }
+
+  // The tumbleweed: tangled strokes inside a circle, from a fixed seed so every render draws the same one.
+  function tumbleweed(parent) {
+    let seed = 7;
+    const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const point = () => {
+      const angle = random() * Math.PI * 2, radius = R * Math.sqrt(random());
+      return [Math.cos(angle) * radius, Math.sin(angle) * radius];
+    };
+    const ball = make("g", {}, parent);
+    for (let i = 0; i < 26; i++) {
+      const [a, b, c, d] = [point(), point(), point(), point()];
+      make("path", {
+        d: `M${a} C${b} ${c} ${d}`, fill: "none", "stroke-linecap": "round",
+        stroke: i % 3 ? "#9C5A2C" : "#C98A4E", "stroke-width": i % 3 ? 3 : 2.2,
+      }, ball);
+    }
+    return ball;
+  }
+
+  /// Builds the canvas for `layout` ("header" or "search") and, for search, the phone in `lang`.
+  function setup(layout, lang = "en") {
+    const { height, phone } = LAYOUTS[layout];
+    const scale = height / SCENE_HEIGHT;
+    // The scene's width in its own coordinates: the canvas is always 1920 px wide.
+    const width = 1920 / scale;
+    const artLeft = width - ART_WIDTH;
+
+    const canvas = document.getElementById("canvas");
+    canvas.style.height = `${height}px`;
+    canvas.innerHTML = `
+      <div class="scene" style="width: ${width}px; transform: scale(${scale})">
+        ${artLeft > 0 ? `<img class="edge" style="width: ${artLeft + 20}px" src="assets/scene-edge.png" alt="">` : ""}
+        <img class="art" src="assets/scene.png" alt="">
+        <!-- Over the artwork, so the clouds cross the sun. -->
+        <svg id="sky" viewBox="0 0 ${width} ${SCENE_HEIGHT}"></svg>
+        <svg id="weed" viewBox="0 0 ${width} ${SCENE_HEIGHT}"></svg>
+      </div>
+      ${phone ? `<div class="tagline">${TAGLINES[lang].replace(/\n/g, "<br>")}</div>` : ""}
+      ${phone ? `<div class="phone"><img src="../screenshots/raw/${SCREENS[lang]}/iphone/light/${phone}.png" alt=""></div>` : ""}`;
+
+    const sky = document.getElementById("sky");
+    for (const layer of layers) {
+      layer.node = make("g", { opacity: layer.opacity }, sky);
+      // Enough copies of the period to cover the width while it slides by one period.
+      for (let copy = -1; copy <= Math.ceil(width / layer.period); copy++) {
+        for (const c of layer.clouds) {
+          const holder = make("g", { transform: `translate(${copy * layer.period + c.x} ${c.y})` }, layer.node);
+          cloud(holder, c.scale);
+        }
+      }
+    }
+
+    const weed = document.getElementById("weed");
+    scene = {
+      width,
+      shadow: make("ellipse", { rx: R, ry: 7, fill: "#B55A2C", opacity: 0.35 }, weed),
+      ball: tumbleweed(weed),
+      /// The ground line under x: flat over the stretched edge, then the artwork's, rising to the right.
+      groundY: (x) => x < artLeft ? 613 : Math.max(584, 613 - 0.0345 * (x - artLeft)),
+    };
+    frame(0);
+  }
+
+  /// Draws the scene at `t` seconds into the loop.
+  function frame(t) {
+    const progress = (t % LOOP) / LOOP;
+
+    for (const layer of layers) {
+      layer.node.setAttribute("transform", `translate(${-progress * layer.period} 0)`);
+    }
+
+    // One crossing per loop, off-screen at both ends; shifted so the first frame shows it mid-way.
+    const run = scene.width + 4 * R;
+    const x = ((progress + 0.35) % 1) * run - 2 * R;
+    const hops = 16;
+    const hop = Math.abs(Math.sin(Math.PI * hops * progress)) * 22;
+    const ground = scene.groundY(x);
+    const angle = (x / R) * (180 / Math.PI);
+    scene.ball.setAttribute("transform", `translate(${x} ${ground - R - hop + 6}) rotate(${angle})`);
+    scene.shadow.setAttribute("cx", x);
+    scene.shadow.setAttribute("cy", ground + 4);
+    scene.shadow.setAttribute("rx", R * (1 - hop / 80));
+  }
+
+  /// For header-export.swift: full size, no page chrome, one frame at a time.
+  function exportFrame(t) {
+    live = false;
+    document.body.classList.add("export");
+    frame(t);
+  }
+
+  function setupFromHash() {
+    const [, layout = "header", lang] = location.hash.match(/^#(header|search)-?(.*)$/) ?? [];
+    setup(layout, lang || "en");
+  }
+
+  // Plays in a browser; header-export.swift stops it with its first exportFrame call.
+  let live = true;
+  const start = performance.now();
+  const tick = (now) => { if (live) { frame((now - start) / 1000); requestAnimationFrame(tick); } };
+  setupFromHash();
+  window.addEventListener("hashchange", setupFromHash);
+  requestAnimationFrame(tick);
+</script>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>App Store slides</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* CONFIG: the app's theme colours, copied from its Theme file. */
+  :root {
+    --burgundy: #601411;
+    --sunset: #FFCD5C;
+    --sunset-deep: #FFBB5D;
+    --orange: #ED682E;
+  }
+
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: -apple-system, system-ui, sans-serif; background: #2a2a2a; color: #eee; padding: 32px; }
+  h1 { font-family: Fredoka, sans-serif; font-size: 30px; margin-bottom: 28px; }
+  section { margin-bottom: 40px; }
+  section h2 { font-family: Fredoka, sans-serif; font-size: 22px; margin-bottom: 12px; }
+  .row { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 8px; }
+
+  /* One slide = 440×956 CSS px, i.e. 1320×2868 at 3x. Shown at half size; ?export renders it at full size. */
+  .slide {
+    position: relative; flex: none; width: 440px; height: 956px; overflow: hidden; zoom: 0.5;
+    font-family: Fredoka, sans-serif; color: var(--burgundy);
+    background: linear-gradient(180deg, var(--sunset) 0%, var(--sunset-deep) 45%, var(--orange) 100%);
+  }
+  .slide h3 {
+    position: absolute; left: 12px; right: 12px; top: 52px; z-index: 5;
+    font-size: 42px; line-height: 1.12; font-weight: 600; text-align: center;
+  }
+
+  .phone {
+    position: absolute; left: 120px; top: 250px; width: 300px; aspect-ratio: 1320 / 2868;
+    border: 9px solid #1d1d1f; border-radius: 52px; background: #1d1d1f;
+    box-shadow: 0 30px 60px rgba(60, 20, 10, .35);
+  }
+  .phone img { width: 100%; height: 100%; border-radius: 43px; display: block; }
+
+  .mascot { position: absolute; width: 120px; left: 8px; bottom: 34px; z-index: 4; }
+
+  .bubble {
+    position: absolute; left: 14px; bottom: 210px; z-index: 4; max-width: 215px;
+    background: #fff; color: var(--burgundy); font-size: 20px; font-weight: 600; line-height: 1.15;
+    padding: 12px 14px; border-radius: 20px; border: 2.5px solid var(--burgundy);
+    box-shadow: 0 8px 20px rgba(96, 20, 17, .2);
+  }
+  /* Comic-strip tail: the burgundy ::before sits behind the white ::after. */
+  .bubble::before {
+    content: ""; position: absolute; left: 31px; bottom: -20px;
+    border: 11px solid transparent; border-top: 11px solid var(--burgundy); border-left: 11px solid var(--burgundy);
+  }
+  .bubble::after {
+    content: ""; position: absolute; left: 34px; bottom: -13px;
+    border: 9px solid transparent; border-top: 9px solid #fff; border-left: 9px solid #fff;
+  }
+
+  /* Odd slides mirror the layout: their mascot sits bottom-right, facing the next slide's one. */
+  .mirror .phone { left: 20px; }
+  .mirror .mascot { left: auto; right: 8px; transform: scaleX(-1); }
+  .mirror .bubble { left: auto; right: 14px; }
+  .mirror .bubble::before { left: auto; right: 31px; border-left-color: transparent; border-right: 11px solid var(--burgundy); }
+  .mirror .bubble::after { left: auto; right: 34px; border-left-color: transparent; border-right: 9px solid #fff; }
+
+  /* iPad 13": 1032×1376 CSS px, i.e. 2064×2752 at 2x. The tablet runs off the bottom: at full height, the
+     app's iPad screens read too small. */
+  .slide.ipad { width: 1032px; height: 1376px; zoom: 0.35; }
+  .ipad h3 { left: 130px; right: 130px; top: 80px; font-size: 68px; }
+  .ipad .phone {
+    left: 130px; top: 330px; width: 880px; aspect-ratio: 2064 / 2752;
+    border-width: 14px; border-radius: 44px; box-shadow: 0 40px 80px rgba(60, 20, 10, .35);
+  }
+  .ipad .phone img { border-radius: 30px; }
+  .ipad .mascot { width: 180px; left: 16px; bottom: 40px; }
+  .ipad .bubble {
+    left: 28px; bottom: 330px; max-width: 360px;
+    font-size: 32px; padding: 18px 22px; border-radius: 30px; border-width: 3.5px;
+  }
+  .ipad .bubble::before { left: 50px; bottom: -30px; border-width: 16px; }
+  .ipad .bubble::after { left: 55px; bottom: -20px; border-width: 13px; }
+  .ipad.mirror .phone { left: 22px; }
+  .ipad.mirror .mascot { left: auto; right: 16px; }
+  .ipad.mirror .bubble { left: auto; right: 28px; }
+  .ipad.mirror .bubble::before { left: auto; right: 50px; border-right-width: 16px; }
+  .ipad.mirror .bubble::after { left: auto; right: 55px; border-right-width: 13px; }
+
+  /* iPhone Duo, inner display: unfolded, the app runs in landscape. 951×669 CSS px, i.e. 2853×2007 at 3x.
+     The captures carry an EXIF rotation, which WebKit applies. */
+  .slide.duo { width: 951px; height: 669px; }
+  .duo h3 { left: 40px; right: 40px; top: 34px; font-size: 46px; }
+  .duo .phone {
+    left: 271px; top: 168px; width: 640px; aspect-ratio: 2852 / 2006;
+    border-width: 12px; border-radius: 40px;
+  }
+  .duo .phone img { border-radius: 28px; }
+  .duo .mascot { width: 150px; left: 40px; bottom: 26px; }
+  .duo .bubble { left: 16px; bottom: 236px; max-width: 250px; font-size: 24px; padding: 13px 16px; border-radius: 22px; }
+  .duo .bubble::before { left: 60px; bottom: -24px; border-width: 13px; }
+  .duo .bubble::after { left: 64px; bottom: -16px; border-width: 11px; }
+  .duo.mirror .phone { left: 40px; }
+  .duo.mirror .mascot { left: auto; right: 40px; }
+  .duo.mirror .bubble { left: auto; right: 16px; }
+  .duo.mirror .bubble::before { left: auto; right: 60px; border-right-width: 13px; }
+  .duo.mirror .bubble::after { left: auto; right: 64px; border-right-width: 11px; }
+
+  .devices { display: flex; gap: 8px; margin-bottom: 24px; }
+  .devices button {
+    font: 600 15px -apple-system, system-ui, sans-serif; padding: 6px 14px; border-radius: 8px;
+    border: 1px solid #666; background: #3a3a3a; color: #eee; cursor: pointer;
+  }
+  .devices button[aria-pressed="true"] { background: var(--sunset); color: var(--burgundy); border-color: var(--sunset); }
+
+  /* No scrollbar: with a mouse plugged in, macOS draws a legacy one, a white strip on the right of the export. */
+  body.export { padding: 0; background: none; overflow: hidden; }
+  body.export ::-webkit-scrollbar { display: none; }
+  body.export .slide, body.export .slide.ipad { zoom: 1; }
+  body.export h1, body.export .devices { display: none; }
+  body.export section { margin: 0; }
+  body.export .row { padding: 0; }
+</style>
+</head>
+<body>
+<h1>App Store slides</h1>
+<div class="devices">
+  <button type="button" data-device="iphone" aria-pressed="true">iPhone 6,9"</button>
+  <button type="button" data-device="ipad" aria-pressed="false">iPad 13"</button>
+  <button type="button" data-device="duo" aria-pressed="false">iPhone Duo</button>
+</div>
+<div id="slides"></div>
+
+<script>
+  // Marketing copy. "\n" forces a line break; a non-breaking space ( ) goes before French ! ? :.
+  // CONFIG: one entry per language. `screens` borrows another language's captures.
+  const COPY = {
+    en: {
+      name: "English",
+      titles: ["Problem\nin one line", "The gesture", "The result", "The reminder", "The reward", "The detail"],
+      bubbles: ["Hey… where's my thing?", "Snap!", "Wanted!", "I'll tell you.", "Got it back!", "Next one!"],
+    },
+    fr: {
+      name: "Français",
+      titles: ["Le problème\nen une ligne", "Le geste", "Le résultat", "Le rappel", "La récompense", "Le détail"],
+      bubbles: ["Dis… il est où ?", "Clic !", "Recherché !", "Je te préviens.", "Récupéré !", "Au suivant !"],
+    },
+  };
+
+  // CONFIG: raw capture names, one per slide, in order.
+  const SCREENS = ["10-list", "30-capture", "33-saved", "12-detail", "11-history", "04-onboarding"];
+
+  const escape = (text) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+
+  /// Fills the page. `exportSlide` (1-based) shows that one slide at full size, for export.swift, which calls
+  /// this through JavaScript: WebKit refuses a query string on a local file URL.
+  function render(languages = Object.keys(COPY), exportSlide = null, device = "iphone") {
+    const container = document.getElementById("slides");
+    container.replaceChildren();
+    document.body.classList.toggle("export", exportSlide !== null);
+
+    for (const lang of languages) {
+      const copy = COPY[lang];
+      // A language without its own captures names the one it borrows.
+      const shots = copy.screens ?? lang;
+      const section = document.createElement("section");
+      if (exportSlide === null) section.innerHTML = `<h2>${copy.name}</h2>`;
+      const row = document.createElement("div");
+      row.className = "row";
+
+      SCREENS.forEach((screen, i) => {
+        if (exportSlide !== null && i !== exportSlide - 1) return;
+        const slide = document.createElement("div");
+        slide.className = `slide ${device}` + (i % 2 === 0 ? " mirror" : "");
+        slide.innerHTML = `
+          <h3>${escape(copy.titles[i]).replace(/\n/g, "<br>")}</h3>
+          <div class="phone"><img src="../screenshots/raw/${shots}/${device}/light/${screen}.png"></div>
+          <div class="bubble">${escape(copy.bubbles[i])}</div>
+          <img class="mascot" src="assets/mascot.png">`;
+        // Until a language has its own captures, its slides borrow the English ones.
+        const img = slide.querySelector(".phone img");
+        img.onerror = () => { img.onerror = null; img.src = `../screenshots/raw/en/${device}/light/${screen}.png`; };
+        row.append(slide);
+      });
+
+      section.append(row);
+      container.append(section);
+    }
+  }
+
+  for (const button of document.querySelectorAll(".devices button")) {
+    button.onclick = () => {
+      for (const other of document.querySelectorAll(".devices button")) other.setAttribute("aria-pressed", other === button);
+      render(undefined, null, button.dataset.device);
+    };
+  }
+
+  render();
+</script>
+</body>
+</html>

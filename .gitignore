@@ -1,0 +1,9 @@
+# This folder also holds skills that are not ours (Apple's, synced ones): publish only what is listed here.
+/*
+!/.gitignore
+!/README.md
+!/LICENSE
+!/swiftui-adaptive-layout/
+!/swiftui-accessibility/
+!/app-store-screenshots/
+.DS_Store
